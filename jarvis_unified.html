@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS AI Assistant</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <style>
+        /* Theme toggling */
+        body.light {
+            background: linear-gradient(135deg, #e6f0ff, #e9eefc, #e6f0ff);
+            color: #0f172a;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298, #1e3c72);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body.light .login-section { background: rgba(255,255,255,0.5); }
+        body.light .login-card { background: rgba(255,255,255,0.9); border-color: rgba(15,23,42,0.1); }
+        body.light .login-title { color: #0f172a; }
+        body.light .form-input { background: rgba(15,23,42,0.05); border-color: rgba(15,23,42,0.2); color:#0f172a; }
+        body.light .form-input::placeholder { color: rgba(15,23,42,0.6); }
+        body.light .error-message { color: #b91c1c; }
+        body.light .env-warning { color:#854d0e; border-color: rgba(202,138,4,0.4); background: rgba(250,204,21,0.25); }
+        body.light .demo-info { color:#0f172a; background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.25); }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Login Section */
+        .login-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .login-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+    .link-switch { color: #a3d9ff; cursor: pointer; text-decoration: underline; text-align:center; margin-top: 10px; }
+
+        .login-title {
+            text-align: center;
+            color: white;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            color: #ff4444;
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .env-warning {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.4);
+            color: #ffe08a;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 14px;
+        }
+
+        .demo-info {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            color: white;
+            font-size: 14px;
+        }
+
+        /* Chat Section */
+        .chat-section {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .chat-header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 15px 15px 0 0;
+            padding: 20px;
+            color: white;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        body.light .chat-header { color:#0f172a; background: rgba(255,255,255,0.8); border-color: rgba(15,23,42,0.1); }
+
+        .chat-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logout-btn {
+            background: rgba(255, 59, 48, 0.8);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 59, 48, 1);
+        }
+
+        .chat-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            display: flex;
+            overflow: hidden;
+        }
+
+        body.light .chat-container { background: rgba(255,255,255,0.6); }
+
+        .sidebar {
+            width: 300px;
+            background: rgba(255, 255, 255, 0.1);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        body.light .sidebar { background: rgba(255,255,255,0.9); border-color: rgba(15,23,42,0.1); }
+
+        .sidebar h3 {
+            color: white;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .conversation-list {
+            list-style: none;
+        }
+
+        .conversation-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        body.light .conversation-item { color:#0f172a; background: rgba(15,23,42,0.05); }
+
+        .conversation-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(76, 175, 80, 0.5);
+        }
+
+        .conversation-item.active {
+            background: rgba(76, 175, 80, 0.3);
+            border-color: #4CAF50;
+        }
+
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .messages-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #fff;
+            flex: 0 0 36px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .message.assistant .avatar { background: rgba(255,255,255,0.25); }
+        .message.user .avatar { background: linear-gradient(45deg,#4CAF50,#45a049); }
+        body.light .message.assistant .avatar { background: #cbd5e1; color:#0f172a; }
+        body.light .message.user .avatar { background: #2563eb; }
+
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 20px;
+            color: white;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.assistant .message-content {
+            background: rgba(255, 255, 255, 0.15);
+            border-bottom-left-radius: 5px;
+        }
+
+        body.light .message.assistant .message-content { background: #e2e8f0; color:#0f172a; }
+        body.light .message.user .message-content { background: #2563eb; }
+
+        .message-time {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 5px;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0 0 15px 15px;
+        }
+
+        body.light .input-container { background: rgba(255,255,255,0.85); border-color: rgba(15,23,42,0.1); }
+
+        .input-form {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            color: white;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        body.light .message-input { background: rgba(15,23,42,0.05); border-color: rgba(15,23,42,0.2); color:#0f172a; }
+
+        .message-input:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .message-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .send-btn {
+            padding: 15px 20px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            min-width: 80px;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 10px 20px;
+            color: rgba(255, 255, 255, 0.7);
+            font-style: italic;
+        }
+
+        body.light .typing-indicator { color:#334155; }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #4CAF50;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .chat-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                max-height: 200px;
+                border-right: none;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            
+            .message-content {
+                max-width: 85%;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Section -->
+    <div id="loginSection" class="login-section">
+        <div class="login-card">
+            <h1 class="login-title">🤖 JARVIS AI</h1>
+            <form id="loginForm">
+                <div class="form-group">
+                    <input type="text" id="username" class="form-input" placeholder="ชื่อผู้ใช้" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="password" class="form-input" placeholder="รหัสผ่าน" required>
+                </div>
+                <button type="submit" id="loginBtn" class="login-btn">เข้าสู่ระบบ</button>
+                <div id="errorMessage" class="error-message"></div>
+                <div id="envWarning" class="env-warning" style="display:none"></div>
+                <div class="demo-info">
+                    <strong>🎯 ข้อมูลทดสอบ:</strong><br>
+                    Username: <strong>admin</strong><br>
+                    Password: <strong>admin123</strong>
+                </div>
+                <div class="link-switch" id="goRegister">ยังไม่มีบัญชี? สมัครสมาชิก</div>
+                <a href="/register-page" class="link-switch">ไปที่หน้าสมัครสมาชิกแบบเต็ม</a>
+            </form>
+
+            <form id="registerForm" class="hidden">
+                <div class="form-group">
+                    <input type="text" id="reg_username" class="form-input" placeholder="ชื่อผู้ใช้ใหม่" required>
+                </div>
+                <div class="form-group">
+                    <input type="password" id="reg_password" class="form-input" placeholder="รหัสผ่าน" required>
+                </div>
+                <div class="form-group">
+                    <input type="email" id="reg_email" class="form-input" placeholder="อีเมล (ไม่บังคับ)">
+                </div>
+                <button type="submit" id="registerBtn" class="login-btn">สมัครสมาชิก</button>
+                <div id="registerError" class="error-message"></div>
+                <div class="link-switch" id="goLogin">มีบัญชีแล้ว? เข้าสู่ระบบ</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chat Section -->
+    <div id="chatSection" class="chat-section">
+        <div class="container">
+            <div class="chat-header">
+                <h1 class="chat-title">🤖 JARVIS AI Assistant</h1>
+                <div class="user-info">
+                    <button id="themeToggle" class="logout-btn" style="background:#0ea5e9">สลับธีม</button>
+                    <span id="welcomeUser">สวัสดี!</span>
+                    <button id="logoutBtn" class="logout-btn">ออกจากระบบ</button>
+                </div>
+            </div>
+            
+            <div class="chat-container">
+                <div class="sidebar">
+                    <h3>💬 บทสนทนา</h3>
+                    <ul id="conversationList" class="conversation-list">
+                        <!-- Conversations will be loaded here -->
+                    </ul>
+                </div>
+                
+                <div class="chat-main">
+                    <div id="messagesContainer" class="messages-container">
+                        <div class="message assistant">
+                            <div class="avatar">🤖</div>
+                            <div class="message-content">
+                                สวัสดีครับ! ผม JARVIS AI ผู้ช่วยอัจฉริยะของคุณ<br>
+                                ผมสามารถช่วยคุณได้หลายอย่าง เช่น:
+                                <ul style="margin: 10px 0; padding-left: 20px;">
+                                    <li>ตอบคำถามทั่วไป</li>
+                                    <li>ค้นหาข้อมูลจากอินเทอร์เน็ต</li>
+                                    <li>ตรวจสอบสภาพอากาศ</li>
+                                    <li>หาข่าวสารล่าสุด</li>
+                                </ul>
+                                มีอะไรให้ช่วยไหมครับ?
+                            </div>
+                            <div class="message-time" id="currentTime"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="typing-indicator" id="typingIndicator">
+                        🤖 JARVIS กำลังพิมพ์... <span class="loading"></span>
+                    </div>
+                    
+                    <div class="input-container">
+                        <form id="messageForm" class="input-form">
+                            <input type="text" id="messageInput" class="message-input" placeholder="พิมพ์ข้อความของคุณ..." required>
+                            <button type="submit" id="sendBtn" class="send-btn">ส่ง</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class JARVISApp {
+            constructor() {
+                this.currentUser = null;
+                this.sessionId = null;
+                this.currentConversationId = null;
+                this.socket = null;
+                this.init();
+            }
+
+            init() {
+                this.bindEvents();
+                this.updateCurrentTime();
+                setInterval(() => this.updateCurrentTime(), 60000);
+                this.checkEnvironment();
+                
+                // ตรวจสอบ session ที่มีอยู่
+                const savedSession = localStorage.getItem('jarvis_session');
+                if (savedSession) {
+                    const session = JSON.parse(savedSession);
+                    if (this.isSessionValid(session)) {
+                        this.showChatSection(session);
+                        return;
+                    }
+                }
+                
+                this.showLoginSection();
+            }
+
+            checkEnvironment() {
+                // แจ้งเตือนถ้าเปิดไฟล์จากเครื่อง (file://) ซึ่งจะเรียก API ไม่ได้
+                if (window.location.protocol === 'file:') {
+                    const warn = document.getElementById('envWarning');
+                    if (warn) {
+                        warn.style.display = 'block';
+                        warn.innerHTML = `⚠️ กรุณาเปิดผ่านเซิร์ฟเวอร์: <a href="http://localhost:5000" style="color: #fff; text-decoration: underline;">http://localhost:5000</a><br>ไม่สามารถล็อกอินได้เมื่อเปิดไฟล์ตรง (file://)`;
+                    }
+                }
+            }
+
+            bindEvents() {
+                // Login form
+                document.getElementById('loginForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleLogin();
+                });
+
+                // Register form
+                document.getElementById('registerForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleRegister();
+                });
+
+                // Message form
+                document.getElementById('messageForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.sendMessage();
+                });
+
+                // Logout button
+                document.getElementById('logoutBtn').addEventListener('click', () => {
+                    this.handleLogout();
+                });
+
+                // Enter key in message input
+                document.getElementById('messageInput').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+
+                // Switch login/register
+                document.getElementById('goRegister').addEventListener('click', () => this.toggleAuth('register'));
+                document.getElementById('goLogin').addEventListener('click', () => this.toggleAuth('login'));
+            }
+
+            toggleAuth(mode) {
+                const loginForm = document.getElementById('loginForm');
+                const registerForm = document.getElementById('registerForm');
+                if (mode === 'register') {
+                    loginForm.classList.add('hidden');
+                    registerForm.classList.remove('hidden');
+                } else {
+                    registerForm.classList.add('hidden');
+                    loginForm.classList.remove('hidden');
+                }
+            }
+
+            updateCurrentTime() {
+                const now = new Date();
+                const timeString = now.toLocaleString('th-TH', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                const timeElement = document.getElementById('currentTime');
+                if (timeElement) {
+                    timeElement.textContent = timeString;
+                }
+            }
+
+            showLoginSection() {
+                document.getElementById('loginSection').style.display = 'flex';
+                document.getElementById('chatSection').style.display = 'none';
+            }
+
+            showChatSection(session) {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('chatSection').style.display = 'flex';
+                
+                this.currentUser = session.username;
+                this.sessionId = session.session_id;
+                
+                document.getElementById('welcomeUser').textContent = `สวัสดี ${this.currentUser}!`;
+                
+                this.connectSocket();
+                this.loadConversations();
+            }
+
+            isSessionValid(session) {
+                if (!session.session_id || !session.username || !session.expires_at) {
+                    return false;
+                }
+                return new Date(session.expires_at) > new Date();
+            }
+
+            async handleLogin() {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const loginBtn = document.getElementById('loginBtn');
+                const errorDiv = document.getElementById('errorMessage');
+
+                if (!username || !password) {
+                    this.showError('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+                    return;
+                }
+
+                loginBtn.disabled = true;
+                loginBtn.textContent = 'กำลังเข้าสู่ระบบ...';
+                errorDiv.textContent = '';
+
+                try {
+                    const response = await fetch('/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ username, password })
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        const session = {
+                            username: username,
+                            session_id: result.session_id,
+                            expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+                        };
+                        
+                        localStorage.setItem('jarvis_session', JSON.stringify(session));
+                        this.showChatSection(session);
+                    } else {
+                        this.showError(result.message || 'เข้าสู่ระบบไม่สำเร็จ');
+                    }
+                } catch (error) {
+                    console.error('Login error:', error);
+                    if (window.location.protocol === 'file:') {
+                        this.showError('ไม่สามารถเชื่อมต่อได้: กรุณาเปิดผ่าน http://localhost:5000 (ห้ามเปิดไฟล์ตรง)');
+                    } else {
+                        this.showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+                    }
+                } finally {
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'เข้าสู่ระบบ';
+                }
+            }
+
+            async handleRegister() {
+                const username = document.getElementById('reg_username').value;
+                const password = document.getElementById('reg_password').value;
+                const email = document.getElementById('reg_email').value;
+                const registerBtn = document.getElementById('registerBtn');
+                const errorDiv = document.getElementById('registerError');
+
+                if (!username || !password) {
+                    errorDiv.textContent = 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน';
+                    return;
+                }
+
+                registerBtn.disabled = true;
+                registerBtn.textContent = 'กำลังสมัคร...';
+                errorDiv.textContent = '';
+
+                try {
+                    const response = await fetch('/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password, email })
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        // สมัครเสร็จ ล็อกอินอัตโนมัติ
+                        document.getElementById('username').value = username;
+                        document.getElementById('password').value = password;
+                        this.toggleAuth('login');
+                        await this.handleLogin();
+                    } else {
+                        errorDiv.textContent = result.message || 'สมัครสมาชิกไม่สำเร็จ';
+                    }
+                } catch (error) {
+                    errorDiv.textContent = 'ไม่สามารถเชื่อมต่อได้ กรุณาลองใหม่';
+                } finally {
+                    registerBtn.disabled = false;
+                    registerBtn.textContent = 'สมัครสมาชิก';
+                }
+            }
+
+            showError(message) {
+                const errorDiv = document.getElementById('errorMessage');
+                errorDiv.textContent = message;
+                setTimeout(() => {
+                    errorDiv.textContent = '';
+                }, 5000);
+            }
+
+            handleLogout() {
+                // แจ้งเซิร์ฟเวอร์เพื่อตัด session และลบคุกกี้
+                fetch('/logout', { method: 'POST' }).catch(() => {});
+                localStorage.removeItem('jarvis_session');
+                if (this.socket) {
+                    this.socket.disconnect();
+                }
+                this.currentUser = null;
+                this.sessionId = null;
+                this.currentConversationId = null;
+                this.showLoginSection();
+            }
+
+            connectSocket() {
+                // ส่ง session_id ไปใน auth เผื่อกรณีเบราว์เซอร์ไม่ส่งคุกกี้
+                this.socket = io({
+                    auth: { session_id: this.sessionId }
+                });
+                
+                // สอดคล้องกับอีเวนต์จากฝั่งเซิร์ฟเวอร์ (ai_response, ai_typing)
+                this.socket.on('ai_response', (data) => {
+                    this.hideTypingIndicator();
+                    this.addMessage('assistant', data.message);
+                    this.enableSendButton();
+                });
+
+                this.socket.on('ai_typing', (data) => {
+                    this.showTypingIndicator();
+                });
+
+                this.socket.on('error', (data) => {
+                    this.hideTypingIndicator();
+                    this.addMessage('assistant', 'เกิดข้อผิดพลาด: ' + data.message);
+                    this.enableSendButton();
+                });
+            }
+
+            async loadConversations() {
+                try {
+                    const response = await fetch(`/api/conversations?session_id=${this.sessionId}`);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        this.displayConversations(result.conversations);
+                    }
+                } catch (error) {
+                    console.error('Failed to load conversations:', error);
+                }
+            }
+
+            displayConversations(conversations) {
+                const list = document.getElementById('conversationList');
+                list.innerHTML = '';
+                
+                conversations.forEach(conv => {
+                    const item = document.createElement('li');
+                    item.className = 'conversation-item';
+                    item.dataset.conversationId = conv.id;
+                    
+                    const date = new Date(conv.created_at).toLocaleDateString('th-TH');
+                    const preview = conv.last_message ? conv.last_message.substring(0, 30) + '...' : 'บทสนทนาใหม่';
+                    
+                    item.innerHTML = `
+                        <div style="font-weight: 600;">${date}</div>
+                        <div style="font-size: 12px; opacity: 0.8;">${preview}</div>
+                    `;
+                    
+                    item.addEventListener('click', () => {
+                        this.loadConversation(conv.id);
+                    });
+                    
+                    list.appendChild(item);
+                });
+            }
+
+            async loadConversation(conversationId) {
+                try {
+                    const response = await fetch(`/api/conversation/${conversationId}?session_id=${this.sessionId}`);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        this.currentConversationId = conversationId;
+                        this.displayMessages(result.messages);
+                        this.setActiveConversation(conversationId);
+                    }
+                } catch (error) {
+                    console.error('Failed to load conversation:', error);
+                }
+            }
+
+            setActiveConversation(conversationId) {
+                document.querySelectorAll('.conversation-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                const activeItem = document.querySelector(`[data-conversation-id="${conversationId}"]`);
+                if (activeItem) {
+                    activeItem.classList.add('active');
+                }
+            }
+
+            displayMessages(messages) {
+                const container = document.getElementById('messagesContainer');
+                container.innerHTML = '';
+                
+                // เพิ่มข้อความต้อนรับ
+                const welcomeMessage = document.createElement('div');
+                welcomeMessage.className = 'message assistant';
+                welcomeMessage.innerHTML = `
+                    <div class="avatar">🤖</div>
+                    <div class="message-content">
+                        สวัสดีครับ! ผม JARVIS AI ผู้ช่วยอัจฉริยะของคุณ<br>
+                        มีอะไรให้ช่วยไหมครับ?
+                    </div>
+                    <div class="message-time">${new Date().toLocaleString('th-TH')}</div>
+                `;
+                container.appendChild(welcomeMessage);
+                
+                // เพิ่มข้อความจากประวัติ
+                messages.forEach(msg => {
+                    this.addMessage(msg.sender, msg.content, msg.timestamp, false);
+                });
+                
+                this.scrollToBottom();
+            }
+
+            async sendMessage() {
+                const input = document.getElementById('messageInput');
+                const message = input.value.trim();
+                
+                if (!message) return;
+
+                // แสดงข้อความของผู้ใช้
+                this.addMessage('user', message);
+                input.value = '';
+                
+                // แสดงสถานะกำลังพิมพ์
+                this.showTypingIndicator();
+                this.disableSendButton();
+
+                try {
+                    const response = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            session_id: this.sessionId,
+                            conversation_id: this.currentConversationId
+                        })
+                    });
+
+                    const result = await response.json();
+                    
+                    this.hideTypingIndicator();
+                    
+                    if (result.success) {
+                        this.addMessage('assistant', result.response);
+                        if (result.conversation_id) {
+                            this.currentConversationId = result.conversation_id;
+                        }
+                        // โหลดบทสนทนาใหม่
+                        this.loadConversations();
+                    } else {
+                        this.addMessage('assistant', 'เกิดข้อผิดพลาด: ' + result.message);
+                    }
+                } catch (error) {
+                    this.hideTypingIndicator();
+                    this.addMessage('assistant', 'เกิดข้อผิดพลาดในการเชื่อมต่อ');
+                    console.error('Send message error:', error);
+                } finally {
+                    this.enableSendButton();
+                }
+            }
+
+            addMessage(sender, content, timestamp = null, scroll = true) {
+                const container = document.getElementById('messagesContainer');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}`;
+                
+                const time = timestamp ? new Date(timestamp) : new Date();
+                const timeString = time.toLocaleString('th-TH', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    day: 'numeric',
+                    month: 'short'
+                });
+                
+                messageDiv.innerHTML = `
+                    <div class="avatar">${sender === 'assistant' ? '🤖' : 'คุณ'}</div>
+                    <div class="message-content">${this.formatMessage(content)}</div>
+                    <div class="message-time">${timeString}</div>
+                `;
+                
+                container.appendChild(messageDiv);
+                
+                if (scroll) {
+                    this.scrollToBottom();
+                }
+            }
+
+            formatMessage(content) {
+                // แปลง line breaks และ format ข้อความ
+                return content
+                    .replace(/\n/g, '<br>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>');
+            }
+
+            showTypingIndicator() {
+                document.getElementById('typingIndicator').style.display = 'block';
+                this.scrollToBottom();
+            }
+
+            hideTypingIndicator() {
+                document.getElementById('typingIndicator').style.display = 'none';
+            }
+
+            disableSendButton() {
+                const sendBtn = document.getElementById('sendBtn');
+                sendBtn.disabled = true;
+                sendBtn.textContent = 'กำลังส่ง...';
+            }
+
+            enableSendButton() {
+                const sendBtn = document.getElementById('sendBtn');
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'ส่ง';
+            }
+
+            scrollToBottom() {
+                const container = document.getElementById('messagesContainer');
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        // เริ่มแอพพลิเคชัน
+        document.addEventListener('DOMContentLoaded', () => {
+            new JARVISApp();
+            const btn = document.getElementById('themeToggle');
+            if (btn) {
+                // persist theme
+                const saved = localStorage.getItem('jarvis_theme');
+                if (saved === 'light') document.body.classList.add('light');
+                btn.addEventListener('click', () => {
+                    document.body.classList.toggle('light');
+                    localStorage.setItem('jarvis_theme', document.body.classList.contains('light') ? 'light' : 'dark');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

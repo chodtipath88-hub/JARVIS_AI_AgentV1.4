@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JARVIS AI Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+   
+    body {
+      font-family: 'Kanit', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    }
+
+    .chat-container {
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+    }
+
+    /* Glassmorphism effect */
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.1);
+    }
+
+    .message-bubble {
+      max-width: 75%;
+      word-break: break-word;
+      animation: fadeInUp 0.25s ease-out;
+      position: relative;
+    }
+
+    .user-message {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+
+    .ai-message {
+      background: rgba(55, 65, 81, 0.8);
+      color: white;
+      border-bottom-left-radius: 4px;
+    }
+
+    .image-msg img {
+      max-width: 200px;
+      border-radius: 12px;
+      margin-top: 8px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .image-msg img:hover {
+      transform: scale(1.02);
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .typing-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .typing-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #60a5fa;
+      animation: typing 1.4s infinite ease-in-out;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+      30% { opacity: 1; transform: scale(1); }
+    }
+
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: #475569;
+      border-radius: 3px;
+    }
+
+    @media (max-width: 768px) {
+      .chat-container {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        position: fixed;
+        left: -320px;
+        width: 320px;
+        height: 100vh;
+        z-index: 50;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transform: translateX(0);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .sidebar.closed {
+        transform: translateX(-100%);
+      }
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 40;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+      .overlay.visible {
+        opacity: 1;
+        visibility: visible;
+      }
+    }
+  </style>
+</head>
+<body class="text-white overflow-hidden">
+  <div class="chat-container">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar glass flex flex-col border-r border-slate-700/50 transition-transform duration-300">
+      <!-- User Header -->
+      <div class="p-4 border-b border-slate-700/30">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+              <i class="fas fa-user text-white text-sm"></i>
+            </div>
+            <div>
+              <h3 id="currentUserName" class="font-semibold text-white truncate max-w-[140px]">ผู้ใช้</h3>
+              <div class="flex items-center space-x-1 mt-1">
+                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span class="text-xs text-slate-400">ออนไลน์</span>
+              </div>
+            </div>
+          </div>
+          <button id="userMenuBtn" class="p-2 hover:bg-slate-700/50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <i class="fas fa-cog text-slate-400"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search & New Chat -->
+      <div class="p-4 space-y-3">
+        <button id="newChatBtn" class="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl font-medium transition-all flex items-center justify-center space-x-2 shadow-md hover:shadow-lg">
+          <i class="fas fa-plus"></i>
+          <span>แชทใหม่</span>
+        </button>
+       
+        <div class="relative">
+          <i class="fas fa-search absolute left-3 top-3 text-slate-400"></i>
+          <input type="text" id="searchChat" placeholder="ค้นหาบทสนทนา..."
+                 class="w-full pl-10 pr-4 py-2.5 bg-slate-800/50 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white placeholder-slate-400">
+        </div>
+      </div>
+
+      <!-- Conversations List -->
+      <div class="flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin">
+        <div class="px-2 py-2">
+          <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">บทสนทนาล่าสุด</h4>
+        </div>
+        <div id="conversationsList" class="space-y-1.5">
+          <!-- Conversations will be loaded here -->
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="p-4 border-t border-slate-700/30">
+        <button id="logoutBtn" class="w-full py-2.5 text-sm text-slate-400 hover:text-red-400 transition-colors flex items-center justify-center space-x-2 group">
+          <i class="fas fa-sign-out-alt group-hover:-translate-x-1 transition-transform"></i>
+          <span>ออกจากระบบ</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="flex flex-col">
+      <!-- Header -->
+      <header class="p-4 glass border-b border-slate-700/30">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <button id="mobileSidebarBtn" class="md:hidden p-2 hover:bg-slate-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <i class="fas fa-bars text-slate-300"></i>
+            </button>
+            <div>
+              <h2 id="currentChatTitle" class="text-lg font-semibold text-white truncate max-w-[200px] md:max-w-none">เลือกหรือสร้างบทสนทนา</h2>
+              <p id="currentChatInfo" class="text-sm text-slate-400">เริ่มแชทใหม่เพื่อพูดคุยกับ JARVIS</p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button id="exportBtn" class="p-2 hover:bg-slate-700/50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500" title="ส่งออก">
+              <i class="fas fa-file-export text-slate-400"></i>
+            </button>
+            <button id="chatMenuBtn" class="p-2 hover:bg-slate-700/50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <i class="fas fa-ellipsis-v text-slate-400"></i>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Messages -->
+      <div id="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
+        <div id="welcomeMessage" class="text-center py-16 px-4">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-4 shadow-lg">
+            <i class="fas fa-robot text-2xl text-white"></i>
+          </div>
+          <h3 class="text-xl font-semibold text-white mb-2">ยินดีต้อนรับสู่ JARVIS AI</h3>
+          <p class="text-slate-400 max-w-md mx-auto leading-relaxed">
+            เริ่มบทสนทนาใหม่หรือเลือกบทสนทนาที่มีอยู่เพื่อพูดคุยกับผู้ช่วย AI ส่วนตัวของคุณ
+          </p>
+        </div>
+      </div>
+
+      <!-- Typing Indicator -->
+      <div id="typingIndicator" class="hidden px-4 py-2">
+        <div class="ai-message message-bubble rounded-2xl px-4 py-3">
+          <div class="typing-indicator">
+            <span class="text-slate-300">JARVIS กำลังพิมพ์</span>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+            <div class="typing-dot"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <footer class="p-4 glass border-t border-slate-700/30">
+        <div class="flex items-end space-x-2">
+          <label class="p-3 text-slate-400 hover:text-cyan-400 hover:bg-slate-700/50 rounded-lg cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500">
+            <i class="fas fa-image"></i>
+            <input type="file" id="imageUpload" accept="image/*" class="hidden" />
+          </label>
+         
+          <div class="flex-1 relative">
+            <textarea id="messageInput"
+                      placeholder="พิมพ์ข้อความ... (Shift+Enter = ขึ้นบรรทัดใหม่)"
+                      rows="1"
+                      class="w-full p-3 bg-slate-800/50 border border-slate-700 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 text-white placeholder-slate-400"
+                      style="min-height: 48px; max-height: 140px;"></textarea>
+           
+            <button id="sendBtn"
+                    disabled
+                    class="absolute right-2 bottom-2 p-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <i class="fas fa-paper-plane text-white"></i>
+            </button>
+          </div>
+        </div>
+       
+        <div class="mt-2 text-xs text-slate-500 text-center">
+          พิมพ์ <kbd class="bg-slate-700 px-1.5 py-0.5 rounded">Enter</kbd> เพื่อส่ง
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <!-- Overlay -->
+  <div id="overlay" class="overlay"></div>
+
+  <!-- Chat Menu -->
+  <div id="chatMenu" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-slate-800/90 backdrop-blur-lg rounded-2xl p-5 w-full max-w-sm border border-slate-700/50">
+      <h3 class="text-lg font-semibold text-white mb-4 flex items-center">
+        <i class="fas fa-robot text-blue-400 mr-2"></i>
+        ตัวเลือกบทสนทนา
+      </h3>
+      <div class="space-y-2">
+        <button id="renameChatBtn" class="w-full text-left px-4 py-3 hover:bg-slate-700/70 rounded-xl transition-colors flex items-center space-x-3">
+          <i class="fas fa-edit text-slate-400"></i>
+          <span>เปลี่ยนชื่อบทสนทนา</span>
+        </button>
+        <button id="copyAllBtn" class="w-full text-left px-4 py-3 hover:bg-slate-700/70 rounded-xl transition-colors flex items-center space-x-3">
+          <i class="fas fa-copy text-slate-400"></i>
+          <span>คัดลอกทั้งหมด</span>
+        </button>
+        <button id="exportPdfBtn" class="w-full text-left px-4 py-3 hover:bg-slate-700/70 rounded-xl transition-colors flex items-center space-x-3">
+          <i class="fas fa-file-pdf text-red-400"></i>
+          <span>ส่งออกเป็น PDF</span>
+        </button>
+        <hr class="border-slate-700 my-2">
+        <button id="deleteChatBtn" class="w-full text-left px-4 py-3 hover:bg-red-600/70 rounded-xl transition-colors flex items-center space-x-3 text-red-400">
+          <i class="fas fa-trash"></i>
+          <span>ลบบทสนทนา</span>
+        </button>
+        <button id="closeChatMenuBtn" class="w-full text-left px-4 py-3 hover:bg-slate-700/70 rounded-xl transition-colors flex items-center space-x-3">
+          <i class="fas fa-times text-slate-400"></i>
+          <span>ปิด</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    class JARVISChat {
+      constructor() {
+        this.currentChatId = null;
+        this.currentUser = JSON.parse(localStorage.getItem('jarvis_user'));
+        this.conversations = [];
+        this.socket = io('http://localhost:5000'); // เชื่อมต่อ Flask-SocketIO server
+        this.init();
+      }
+
+      init() {
+        this.checkAuthentication();
+        this.bindEvents();
+        this.setupSocket();
+        this.loadConversations();
+        this.autoResizeTextarea();
+        this.updateUserDisplay();
+      }
+
+      checkAuthentication() {
+        if (!this.currentUser) {
+          window.location.href = '/login.html';
+          return;
+        }
+        // ตรวจสอบ session กับ server
+        this.validateSession();
+      }
+
+      async validateSession() {
+        try {
+          const response = await fetch('/api/conversations');
+          if (!response.ok) {
+            localStorage.removeItem('jarvis_user');
+            window.location.href = '/login.html';
+          }
+        } catch (error) {
+          console.error('Session validation error:', error);
+          // อาจจะไม่ redirect ทันที ให้ user ลองใช้งานก่อน
+        }
+      }
+
+      updateUserDisplay() {
+        if (this.currentUser) {
+          document.getElementById('currentUserName').textContent = this.currentUser.username;
+        }
+      }
+
+      bindEvents() {
+        // New Chat
+        document.getElementById('newChatBtn').addEventListener('click', () => this.newChat());
+
+        // Send Message
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        messageInput.addEventListener('input', (e) => {
+          sendBtn.disabled = e.target.value.trim() === '';
+          this.autoResizeTextarea();
+        });
+        messageInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            this.sendMessage();
+          }
+        });
+        sendBtn.addEventListener('click', () => this.sendMessage());
+
+        // Image Upload
+        document.getElementById('imageUpload').addEventListener('change', (e) => this.handleImageUpload(e));
+
+        // Mobile Sidebar
+        document.getElementById('mobileSidebarBtn').addEventListener('click', () => this.toggleSidebar());
+        document.getElementById('overlay').addEventListener('click', () => this.toggleSidebar());
+
+        // Chat Menu
+        document.getElementById('chatMenuBtn').addEventListener('click', () => this.toggleChatMenu());
+        document.getElementById('closeChatMenuBtn').addEventListener('click', () => this.toggleChatMenu());
+
+        // Export
+        document.getElementById('exportBtn').addEventListener('click', () => this.exportChat());
+        document.getElementById('copyAllBtn').addEventListener('click', () => this.copyAllMessages());
+        document.getElementById('exportPdfBtn').addEventListener('click', () => this.exportToPDF());
+        document.getElementById('renameChatBtn').addEventListener('click', () => this.renameChat());
+        document.getElementById('deleteChatBtn').addEventListener('click', () => this.deleteChat());
+
+        // Search
+        document.getElementById('searchChat').addEventListener('input', (e) => this.searchConversations(e.target.value));
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => this.logout());
+      }
+
+      setupSocket() {
+        this.socket.on('connect', () => {
+          console.log('✅ เชื่อมต่อ Socket.IO สำเร็จ');
+        });
+
+        this.socket.on('connected', (data) => {
+          console.log('Connected to JARVIS:', data.message);
+        });
+
+        this.socket.on('ai_typing', (data) => {
+          this.startTyping();
+        });
+
+        this.socket.on('ai_response', (data) => {
+          this.addMessage('ai', data.message, data.timestamp, data.metadata);
+          this.stopTyping();
+        });
+
+        this.socket.on('error', (data) => {
+          this.stopTyping();
+          this.showError(data.message);
+        });
+
+        this.socket.on('disconnect', () => {
+          console.log('❌ SocketIO disconnected');
+        });
+      }
+
+      async loadConversations() {
+        try {
+          const response = await fetch('/api/conversations');
+          if (response.ok) {
+            const data = await response.json();
+            this.conversations = data.conversations;
+            this.renderConversationsList();
+          } else {
+            console.error('Failed to load conversations');
+          }
+        } catch (error) {
+          console.error('Error loading conversations:', error);
+        }
+      }
+
+      renderConversationsList() {
+        const list = document.getElementById('conversationsList');
+        list.innerHTML = '';
+
+        this.conversations.forEach(conv => {
+          const item = document.createElement('button');
+          item.className = 'w-full text-left px-4 py-3 hover:bg-slate-700/50 rounded-xl transition-colors flex items-center space-x-3 group';
+          
+          const createdDate = new Date(conv.created_at);
+          const lastMessage = `${conv.message_count} ข้อความ`;
+          
+          item.innerHTML = `
+            <i class="fas fa-comment text-slate-400 group-hover:text-blue-400"></i>
+            <div class="flex-1 min-w-0">
+              <p class="font-medium truncate text-white">${conv.title}</p>
+              <p class="text-xs text-slate-400 truncate">${lastMessage}</p>
+            </div>
+            <span class="text-xs text-slate-500">${createdDate.toLocaleDateString('th-TH')}</span>
+          `;
+          
+          item.addEventListener('click', () => this.loadChat(conv.id));
+          list.appendChild(item);
+        });
+      }
+
+      newChat() {
+        this.currentChatId = null;
+        this.currentChatTitle = 'แชทใหม่';
+        document.getElementById('currentChatTitle').textContent = this.currentChatTitle;
+        document.getElementById('currentChatInfo').textContent = 'พูดคุยกับ JARVIS';
+        this.clearMessages();
+        this.toggleSidebar(false); // ปิด sidebar บนมือถือ
+      }
+
+      async sendMessage() {
+        const messageInput = document.getElementById('messageInput');
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        // แสดงข้อความของ user ทันที
+        this.addMessage('user', message, new Date().toISOString());
+        messageInput.value = '';
+        document.getElementById('sendBtn').disabled = true;
+        this.autoResizeTextarea();
+
+        try {
+          // ส่งผ่าน API แทน Socket (เพื่อความเสถียร)
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: message,
+              conversation_id: this.currentChatId
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            
+            // อัปเดต conversation ID ถ้าเป็นแชทใหม่
+            if (!this.currentChatId) {
+              this.currentChatId = data.conversation_id;
+            }
+
+            // แสดงคำตอบจาก AI
+            this.addMessage('ai', data.ai_response.content, data.ai_response.timestamp, data.ai_response.metadata);
+            
+            // รีโหลดรายการการสนทนา
+            this.loadConversations();
+
+          } else {
+            const error = await response.json();
+            this.showError(error.error || 'เกิดข้อผิดพลาดในการส่งข้อความ');
+          }
+
+        } catch (error) {
+          console.error('Send message error:', error);
+          this.showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+        }
+      }
+
+      async loadChat(conversationId) {
+        try {
+          const response = await fetch(`/api/conversations/${conversationId}/messages`);
+          if (response.ok) {
+            const data = await response.json();
+            
+            this.currentChatId = conversationId;
+            const conv = this.conversations.find(c => c.id === conversationId);
+            this.currentChatTitle = conv ? conv.title : 'การสนทนา';
+            
+            document.getElementById('currentChatTitle').textContent = this.currentChatTitle;
+            document.getElementById('currentChatInfo').textContent = `${data.messages.length} ข้อความ`;
+            
+            this.clearMessages();
+            
+            // แสดงข้อความทั้งหมด
+            data.messages.forEach(msg => {
+              this.addMessage(msg.sender, msg.content, msg.timestamp, msg.metadata);
+            });
+            
+            this.toggleSidebar(false);
+            
+          } else {
+            this.showError('ไม่สามารถโหลดการสนทนาได้');
+          }
+        } catch (error) {
+          console.error('Load chat error:', error);
+          this.showError('เกิดข้อผิดพลาดในการโหลดการสนทนา');
+        }
+      }
+
+      addMessage(sender, content, timestamp, metadata = {}) {
+        const messagesContainer = document.getElementById('messagesContainer');
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        if (welcomeMessage) welcomeMessage.remove();
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message-bubble rounded-2xl px-4 py-3 ${sender === 'user' ? 'user-message ml-auto' : 'ai-message'}`;
+
+        const timeStr = new Date(timestamp).toLocaleTimeString('th-TH', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+
+        let metadataHtml = '';
+        if (sender === 'ai' && metadata) {
+          const details = [];
+          if (metadata.model_used) details.push(`Model: ${metadata.model_used}`);
+          if (metadata.processing_time) details.push(`Time: ${metadata.processing_time}s`);
+          if (metadata.platform_detected) details.push(`Platform: ${metadata.platform_detected}`);
+          
+          if (details.length > 0) {
+            metadataHtml = `<div class="text-xs text-slate-400 mt-2 border-t border-slate-600 pt-2">${details.join(' | ')}</div>`;
+          }
+        }
+
+        messageDiv.innerHTML = `
+          <div>${this.escapeHtml(content)}</div>
+          <div class="text-xs text-slate-400 mt-1">${timeStr}</div>
+          ${metadataHtml}
+        `;
+
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.addMessage('user', `<div class="image-msg"><img src="${e.target.result}" alt="Uploaded Image" /></div>`, new Date().toISOString());
+          // ส่งภาพไป AI ถ้าต้องการ (vision model)
+        };
+        reader.readAsDataURL(file);
+      }
+
+      startTyping() {
+        document.getElementById('typingIndicator').classList.remove('hidden');
+        const container = document.getElementById('messagesContainer');
+        container.scrollTop = container.scrollHeight;
+      }
+
+      stopTyping() {
+        document.getElementById('typingIndicator').classList.add('hidden');
+      }
+
+      showError(message) {
+        // แสดง error message ชั่วคราว
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'fixed top-4 right-4 bg-red-500/90 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        errorDiv.innerHTML = `<i class="fas fa-exclamation-triangle mr-2"></i>${message}`;
+        
+        document.body.appendChild(errorDiv);
+        
+        setTimeout(() => {
+          errorDiv.remove();
+        }, 5000);
+      }
+
+      clearMessages() {
+        const messagesContainer = document.getElementById('messagesContainer');
+        messagesContainer.innerHTML = `
+          <div id="welcomeMessage" class="text-center py-16 px-4">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-4 shadow-lg">
+              <i class="fas fa-robot text-2xl text-white"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-white mb-2">ยินดีต้อนรับสู่ JARVIS AI</h3>
+            <p class="text-slate-400 max-w-md mx-auto leading-relaxed">
+              เริ่มบทสนทนาใหม่หรือเลือกบทสนทนาที่มีอยู่เพื่อพูดคุยกับผู้ช่วย AI ส่วนตัวของคุณ
+            </p>
+          </div>
+        `;
+      }
+
+      searchConversations(query) {
+        const filtered = this.conversations.filter(conv => 
+          conv.title.toLowerCase().includes(query.toLowerCase())
+        );
+        // อัปเดต list ด้วย filtered results
+        // (implement full search later)
+      }
+
+      autoResizeTextarea() {
+        const textarea = document.getElementById('messageInput');
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 140) + 'px';
+      }
+
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      toggleSidebar(forceClose = null) {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+        
+        if (window.innerWidth <= 768) {
+          if (forceClose === false || sidebar.classList.contains('open')) {
+            sidebar.classList.remove('open');
+            sidebar.classList.add('closed');
+            overlay.classList.remove('visible');
+          } else {
+            sidebar.classList.remove('closed');
+            sidebar.classList.add('open');
+            overlay.classList.add('visible');
+          }
+        }
+      }
+
+      toggleChatMenu() {
+        document.getElementById('chatMenu').classList.toggle('hidden');
+      }
+
+      exportChat() {
+        if (!this.currentChatId) {
+          this.showError('ไม่มีการสนทนาที่จะส่งออก');
+          return;
+        }
+
+        // ส่งออกเป็น JSON
+        const conv = this.conversations.find(c => c.id === this.currentChatId);
+        const dataStr = JSON.stringify(conv, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `jarvis_chat_${this.currentChatId}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      copyAllMessages() {
+        const messages = Array.from(document.querySelectorAll('.message-bubble')).map(el => el.textContent).join('\n\n');
+        navigator.clipboard.writeText(messages);
+        this.showSuccess('คัดลอกแล้ว!');
+      }
+
+      showSuccess(message) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'fixed top-4 right-4 bg-green-500/90 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+        successDiv.innerHTML = `<i class="fas fa-check mr-2"></i>${message}`;
+        
+        document.body.appendChild(successDiv);
+        
+        setTimeout(() => {
+          successDiv.remove();
+        }, 3000);
+      }
+
+      async exportToPDF() {
+        this.showError('ฟีเจอร์ส่งออก PDF อยู่ระหว่างพัฒนา');
+      }
+
+      renameChat() {
+        const newTitle = prompt('ชื่อใหม่:', this.currentChatTitle);
+        if (newTitle && newTitle !== this.currentChatTitle) {
+          this.currentChatTitle = newTitle;
+          document.getElementById('currentChatTitle').textContent = newTitle;
+          // TODO: Update on server
+          this.showSuccess('เปลี่ยนชื่อแล้ว');
+        }
+        this.toggleChatMenu();
+      }
+
+      deleteChat() {
+        if (confirm('ลบบทสนทนานี้? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
+          // TODO: Delete on server
+          this.newChat();
+          this.loadConversations();
+          this.showSuccess('ลบบทสนทนาแล้ว');
+        }
+        this.toggleChatMenu();
+      }
+
+      async logout() {
+        if (confirm('ออกจากระบบ?')) {
+          try {
+            await fetch('/logout', { method: 'POST' });
+          } catch (error) {
+            console.error('Logout error:', error);
+          }
+          
+          localStorage.removeItem('jarvis_user');
+          window.location.href = '/login.html';
+        }
+      }
+    }
+
+    // เริ่มต้น app
+    new JARVISChat();
+  </script>
+</body>
+</html>

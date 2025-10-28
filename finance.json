@@ -1,0 +1,30 @@
+{
+    "ผู้ใช้ทั่วไป": [
+        {
+            "date": "2025-10-15",
+            "type": "income",
+            "description": "เงินเดือน",
+            "amount": 20000.0
+        },
+        {
+            "date": "2025-10-15",
+            "type": "expense",
+            "description": "อาหาร",
+            "amount": 250.0
+        }
+    ],
+    "ต้น": [
+        {
+            "date": "2025-10-15",
+            "type": "income",
+            "description": "เงินเดือน",
+            "amount": 15000.0
+        },
+        {
+            "date": "2025-10-15",
+            "type": "expense",
+            "description": "อาหาร",
+            "amount": 500.0
+        }
+    ]
+}

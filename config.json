@@ -1,0 +1,13 @@
+{
+  "profile": {
+    "name": "คุณ",
+    "role": "ผู้สร้าง",
+    "created_at": "2025-10-15T10:00:00",
+    "first_seen": null
+  },
+  "conversations": [],
+  "finance": {"income": [], "expenses": []},
+  "appointments": [],
+  "health": {"weight": [], "symptoms": []},
+  "knowledge": {}
+}

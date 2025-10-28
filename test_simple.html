@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS AI - Simple Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border-left: 5px solid;
+        }
+        .success {
+            background: rgba(76, 175, 80, 0.2);
+            border-color: #4CAF50;
+        }
+        .error {
+            background: rgba(244, 67, 54, 0.2);
+            border-color: #f44336;
+        }
+        .warning {
+            background: rgba(255, 152, 0, 0.2);
+            border-color: #ff9800;
+        }
+        .login-form {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+        }
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .chat-area {
+            display: none;
+            margin-top: 30px;
+        }
+        .messages {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+        }
+        .message.user {
+            background: rgba(76, 175, 80, 0.3);
+            margin-left: auto;
+            text-align: right;
+        }
+        .message.ai {
+            background: rgba(33, 150, 243, 0.3);
+            margin-right: auto;
+        }
+        .input-area {
+            display: flex;
+            gap: 10px;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .debug-info {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 JARVIS AI - Simple Test</h1>
+            <p>ทดสอบระบบแบบง่าย ๆ</p>
+        </div>
+
+        <div id="statusArea">
+            <div class="status warning">
+                <strong>⏳ กำลังตรวจสอบระบบ...</strong>
+            </div>
+        </div>
+
+        <div class="login-form" id="loginSection">
+            <h3>🔐 เข้าสู่ระบบ</h3>
+            <div class="form-group">
+                <label>ชื่อผู้ใช้:</label>
+                <input type="text" id="username" value="admin" placeholder="ชื่อผู้ใช้">
+            </div>
+            <div class="form-group">
+                <label>รหัสผ่าน:</label>
+                <input type="password" id="password" value="admin123" placeholder="รหัสผ่าน">
+            </div>
+            <button class="btn" onclick="login()">เข้าสู่ระบบ</button>
+        </div>
+
+        <div class="chat-area" id="chatSection">
+            <h3>💬 แชทกับ JARVIS</h3>
+            <div class="messages" id="messages">
+                <div class="message ai">สวัสดีครับ! ผม JARVIS AI พร้อมช่วยเหลือคุณ</div>
+            </div>
+            <div class="input-area">
+                <input type="text" id="messageInput" placeholder="พิมพ์ข้อความ..." onkeypress="handleEnter(event)">
+                <button class="btn" onclick="sendMessage()">ส่ง</button>
+            </div>
+        </div>
+
+        <div class="debug-info" id="debugInfo">
+            <strong>Debug Information:</strong><br>
+            <div id="debugContent">กำลังตรวจสอบ...</div>
+        </div>
+    </div>
+
+    <script>
+        let sessionId = null;
+        let debugLog = [];
+
+        function addDebug(message) {
+            debugLog.push(new Date().toLocaleTimeString() + ': ' + message);
+            document.getElementById('debugContent').innerHTML = debugLog.slice(-10).join('<br>');
+        }
+
+        function addStatus(message, type = 'warning') {
+            const statusArea = document.getElementById('statusArea');
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${type}`;
+            statusDiv.innerHTML = `<strong>${message}</strong>`;
+            statusArea.appendChild(statusDiv);
+        }
+
+        function addMessage(sender, content) {
+            const messages = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            messageDiv.textContent = content;
+            messages.appendChild(messageDiv);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        async function testConnection() {
+            addDebug('Testing server connection...');
+            try {
+                const response = await fetch('/');
+                if (response.ok) {
+                    addStatus('✅ เชื่อมต่อ Server สำเร็จ', 'success');
+                    addDebug('Server connection: OK');
+                    return true;
+                } else {
+                    addStatus('❌ Server ตอบสนอง แต่มี error', 'error');
+                    addDebug(`Server error: ${response.status}`);
+                    return false;
+                }
+            } catch (error) {
+                addStatus('❌ ไม่สามารถเชื่อมต่อ Server', 'error');
+                addDebug(`Connection error: ${error.message}`);
+                return false;
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                addStatus('❌ กรุณากรอกชื่อผู้ใช้และรหัสผ่าน', 'error');
+                return;
+            }
+
+            addDebug(`Attempting login: ${username}`);
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await response.json();
+                addDebug(`Login response: ${JSON.stringify(result)}`);
+
+                if (result.success) {
+                    sessionId = result.session_id;
+                    addStatus('✅ เข้าสู่ระบบสำเร็จ', 'success');
+                    document.getElementById('loginSection').style.display = 'none';
+                    document.getElementById('chatSection').style.display = 'block';
+                } else {
+                    addStatus(`❌ เข้าสู่ระบบไม่สำเร็จ: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                addStatus('❌ เกิดข้อผิดพลาดในการเข้าสู่ระบบ', 'error');
+                addDebug(`Login error: ${error.message}`);
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message || !sessionId) {
+                return;
+            }
+
+            addMessage('user', message);
+            input.value = '';
+            addDebug(`Sending message: ${message}`);
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: sessionId
+                    })
+                });
+
+                const result = await response.json();
+                addDebug(`Chat response: ${JSON.stringify(result).substring(0, 100)}...`);
+
+                if (result.success) {
+                    addMessage('ai', result.response);
+                } else {
+                    addMessage('ai', `Error: ${result.message}`);
+                }
+            } catch (error) {
+                addMessage('ai', `เกิดข้อผิดพลาด: ${error.message}`);
+                addDebug(`Chat error: ${error.message}`);
+            }
+        }
+
+        function handleEnter(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // เริ่มต้นการทดสอบ
+        window.onload = async function() {
+            addDebug('Page loaded, starting tests...');
+            await testConnection();
+        };
+    </script>
+</body>
+</html>

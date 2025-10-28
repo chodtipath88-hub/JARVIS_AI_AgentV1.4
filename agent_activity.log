@@ -1,0 +1,47 @@
+2025-10-28 13:34:56,863 - INFO - \u2705 Ollama is running and accessible
+2025-10-28 13:34:58,950 - INFO - \U0001f4e6 Available models: ['phi3:mini', 'qwen3-coder:480b-cloud']
+2025-10-28 13:36:01,917 - ERROR - Ollama call failed: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=60)
+2025-10-28 13:36:02,853 - INFO - User: \u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35 \u0e17\u0e14\u0e2a\u0e2d\u0e1a Phi-3... | Model: phi3:mini | Time: 62.97s
+2025-10-28 13:36:05,082 - INFO - \u2705 Ollama is running and accessible
+2025-10-28 13:36:07,151 - INFO - \U0001f4e6 Available models: ['phi3:mini', 'qwen3-coder:480b-cloud']
+2025-10-28 13:37:09,190 - ERROR - Ollama call failed: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=60)
+2025-10-28 13:37:10,244 - INFO - User: reddit AI... | Model: phi3:mini | Time: 63.08s
+2025-10-28 13:38:12,487 - ERROR - Ollama call failed: HTTPConnectionPool(host='localhost', port=11434): Read timed out. (read timeout=60)
+2025-10-28 13:38:14,367 - INFO - User: \u0e2a\u0e20\u0e32\u0e1e\u0e2d\u0e32\u0e01\u0e32\u0e28 \u0e01\u0e23\u0e38\u0e07\u0e40\u0e17\u0e1e... | Model: phi3:mini | Time: 64.12s
+2025-10-28 13:39:39,579 - INFO - \u2705 Ollama is running and accessible
+2025-10-28 13:39:41,631 - INFO - \U0001f4e6 Available models: ['phi3:mini', 'qwen3-coder:480b-cloud']
+2025-10-28 13:40:54,804 - INFO - \u2705 Ollama is running and accessible
+2025-10-28 13:40:56,830 - INFO - \U0001f4e6 Available models: ['phi3:mini', 'qwen3-coder:480b-cloud']
+2025-10-28 14:07:03,320 - INFO - \u2705 Ollama is running and accessible
+2025-10-28 14:07:05,398 - INFO - \U0001f4e6 Available models: ['phi3:mini', 'qwen3-coder:480b-cloud']
+2025-10-28 14:07:42,711 - INFO - \u2705 Ollama is running and accessible
+2025-10-28 14:07:44,742 - INFO - \U0001f4e6 Available models: ['phi3:mini', 'qwen3-coder:480b-cloud']
+2025-10-28 14:25:53,482 - INFO - \u2705 Ollama is running and accessible
+2025-10-28 14:25:55,526 - INFO - \U0001f4e6 Available models: ['phi3:mini', 'qwen3-coder:480b-cloud']
+2025-10-28 14:33:51,646 - INFO - \u2705 Ollama is running and accessible
+2025-10-28 14:33:53,688 - INFO - \U0001f4e6 Available models: ['phi3:mini', 'qwen3-coder:480b-cloud']
+2025-10-28 14:37:26,904 - INFO - \u2705 Ollama is running and accessible
+2025-10-28 14:37:28,930 - INFO - \U0001f4e6 Available models: ['phi3:mini', 'qwen3-coder:480b-cloud']
+2025-10-28 15:35:43,603 - INFO - \u2705 Ollama is running and accessible
+2025-10-28 15:35:45,673 - INFO - \U0001f4e6 Available models: ['phi3:mini', 'qwen3-coder:480b-cloud']
+2025-10-28 16:36:22,603 - INFO - \u2705 Ollama is running and accessible
+2025-10-28 16:36:24,636 - INFO - \U0001f4e6 Available models: ['phi3:mini', 'qwen3-coder:480b-cloud']
+2025-10-28 16:58:22,360 - INFO - \u2705 Ollama is running and accessible
+2025-10-28 16:58:24,405 - INFO - \U0001f4e6 Available models: ['phi3:mini', 'qwen3-coder:480b-cloud']
+2025-10-28 16:59:13,898 - ERROR - process_request failed: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 20816 and this is thread id 3196.
+2025-10-28 16:59:31,107 - ERROR - process_request failed: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 20816 and this is thread id 17520.
+2025-10-28 16:59:59,790 - ERROR - process_request failed: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 20816 and this is thread id 19700.
+2025-10-28 17:00:33,104 - ERROR - process_request failed: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 20816 and this is thread id 3748.
+2025-10-28 17:00:35,651 - ERROR - process_request failed: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 20816 and this is thread id 5228.
+2025-10-28 17:00:36,129 - ERROR - process_request failed: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 20816 and this is thread id 5876.
+2025-10-28 17:00:36,130 - ERROR - process_request failed: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 20816 and this is thread id 17360.
+2025-10-28 17:00:36,129 - ERROR - process_request failed: SQLite objects created in a thread can only be used in that same thread. The object was created in thread id 20816 and this is thread id 21232.
+2025-10-28 20:26:16,989 - INFO - \u2705 Ollama is running and accessible
+2025-10-28 20:26:19,037 - INFO - \U0001f4e6 Available models: ['phi3:mini', 'qwen3-coder:480b-cloud']
+2025-10-28 20:35:13,492 - INFO - \u2705 Ollama is running and accessible
+2025-10-28 20:35:15,530 - INFO - \U0001f4e6 Available models: ['phi3:mini', 'qwen3-coder:480b-cloud']
+2025-10-28 20:37:24,242 - INFO - User: \u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35... | Model: phi3:mini | Time: 27.30s
+2025-10-28 20:43:56,991 - INFO - \u2705 Ollama is running and accessible
+2025-10-28 20:43:59,043 - INFO - \U0001f4e6 Available models: ['phi3:mini', 'qwen3-coder:480b-cloud']
+2025-10-28 20:51:30,189 - ERROR - Ollama call failed after retries: Read timeout after 120s
+2025-10-28 20:51:30,215 - INFO - User: \u0e2a\u0e27\u0e31\u0e2a\u0e14\u0e35... | Model: phi3:mini | Time: 372.16s

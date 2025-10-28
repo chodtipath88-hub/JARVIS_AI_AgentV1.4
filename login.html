@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เข้าสู่ระบบ - JARVIS AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Kanit', sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    }
+
+    .glass {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(56, 189, 248, 0.1);
+    }
+
+    .login-card {
+      animation: fadeInUp 0.6s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .input-group {
+      position: relative;
+    }
+
+    .input-group input:focus + label,
+    .input-group input:not(:placeholder-shown) + label {
+      transform: translateY(-20px) scale(0.8);
+      color: #3b82f6;
+    }
+
+    .input-group label {
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      transition: all 0.2s ease;
+      pointer-events: none;
+      color: #64748b;
+    }
+
+    .btn-gradient {
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      transition: all 0.3s ease;
+    }
+
+    .btn-gradient:hover {
+      background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+    }
+
+    .error-message {
+      animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+  <div class="login-card w-full max-w-md">
+    <!-- Logo & Header -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 mb-4 shadow-lg">
+        <i class="fas fa-robot text-3xl text-white"></i>
+      </div>
+      <h1 class="text-3xl font-bold text-white mb-2">JARVIS AI</h1>
+      <p class="text-slate-400">ยินดีต้อนรับสู่ผู้ช่วย AI ส่วนตัว</p>
+    </div>
+
+    <!-- Login Form -->
+    <div class="glass rounded-2xl p-8 shadow-xl">
+      <form id="loginForm" class="space-y-6">
+        <!-- Username -->
+        <div class="input-group">
+          <input 
+            type="text" 
+            id="username" 
+            name="username"
+            placeholder=" "
+            required
+            class="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          >
+          <label for="username" class="text-slate-400">
+            <i class="fas fa-user mr-2"></i>ชื่อผู้ใช้
+          </label>
+        </div>
+
+        <!-- Password -->
+        <div class="input-group">
+          <input 
+            type="password" 
+            id="password" 
+            name="password"
+            placeholder=" "
+            required
+            class="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+          >
+          <label for="password" class="text-slate-400">
+            <i class="fas fa-lock mr-2"></i>รหัสผ่าน
+          </label>
+          <button 
+            type="button"
+            id="togglePassword"
+            class="absolute right-3 top-3 text-slate-400 hover:text-white transition-colors"
+          >
+            <i class="fas fa-eye"></i>
+          </button>
+        </div>
+
+        <!-- Remember Me -->
+        <div class="flex items-center justify-between">
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" id="rememberMe" class="rounded border-slate-600 bg-slate-800 text-blue-500 focus:ring-blue-500">
+            <span class="text-sm text-slate-300">จดจำการเข้าสู่ระบบ</span>
+          </label>
+          <a href="#" class="text-sm text-blue-400 hover:text-blue-300 transition-colors">ลืมรหัสผ่าน?</a>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorMessage" class="hidden">
+          <div class="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm error-message">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <span id="errorText">เกิดข้อผิดพลาด</span>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button 
+          type="submit" 
+          id="loginBtn"
+          class="w-full py-3 btn-gradient text-white font-medium rounded-xl shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+        >
+          <span id="loginBtnText">
+            <i class="fas fa-sign-in-alt mr-2"></i>เข้าสู่ระบบ
+          </span>
+          <span id="loginBtnLoading" class="hidden">
+            <i class="fas fa-spinner fa-spin mr-2"></i>กำลังเข้าสู่ระบบ...
+          </span>
+        </button>
+      </form>
+
+      <!-- Demo Account Info -->
+      <div class="mt-6 p-4 bg-slate-800/30 rounded-xl border border-slate-700/50">
+        <h3 class="text-sm font-medium text-white mb-2">
+          <i class="fas fa-info-circle text-blue-400 mr-2"></i>บัญชีทดสอบ
+        </h3>
+        <div class="space-y-1 text-xs text-slate-400">
+          <div>👤 ชื่อผู้ใช้: <code class="text-blue-300">admin</code></div>
+          <div>🔑 รหัสผ่าน: <code class="text-blue-300">admin123</code></div>
+        </div>
+      </div>
+
+      <!-- Register Link -->
+      <div class="mt-6 text-center">
+        <p class="text-slate-400 text-sm">
+          ยังไม่มีบัญชี? 
+          <a href="#" id="registerLink" class="text-blue-400 hover:text-blue-300 transition-colors font-medium">สมัครสมาชิก</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- Features -->
+    <div class="mt-8 grid grid-cols-3 gap-4 text-center">
+      <div class="glass rounded-xl p-4">
+        <i class="fas fa-brain text-blue-400 text-2xl mb-2"></i>
+        <p class="text-xs text-slate-300">AI ฉลาด</p>
+      </div>
+      <div class="glass rounded-xl p-4">
+        <i class="fas fa-shield-alt text-green-400 text-2xl mb-2"></i>
+        <p class="text-xs text-slate-300">ปลอดภัย</p>
+      </div>
+      <div class="glass rounded-xl p-4">
+        <i class="fas fa-clock text-purple-400 text-2xl mb-2"></i>
+        <p class="text-xs text-slate-300">24/7</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    class LoginApp {
+      constructor() {
+        this.init();
+      }
+
+      init() {
+        this.bindEvents();
+        this.checkExistingSession();
+      }
+
+      bindEvents() {
+        // Form submission
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          this.handleLogin();
+        });
+
+        // Password toggle
+        document.getElementById('togglePassword').addEventListener('click', () => {
+          this.togglePasswordVisibility();
+        });
+
+        // Register link (placeholder)
+        document.getElementById('registerLink').addEventListener('click', (e) => {
+          e.preventDefault();
+          this.showRegisterInfo();
+        });
+
+        // Enter key on inputs
+        document.getElementById('username').addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            document.getElementById('password').focus();
+          }
+        });
+
+        document.getElementById('password').addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            this.handleLogin();
+          }
+        });
+      }
+
+      async checkExistingSession() {
+        // ตรวจสอบว่ามี session อยู่แล้วหรือไม่
+        try {
+          const response = await fetch('/api/conversations');
+          if (response.ok) {
+            // มี session อยู่แล้ว redirect ไปหน้าแชท
+            window.location.href = '/JARVIS_AI_Chat.html';
+          }
+        } catch (error) {
+          // ไม่มี session หรือ error ปกติ
+          console.log('No existing session');
+        }
+      }
+
+      async handleLogin() {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value;
+
+        if (!username || !password) {
+          this.showError('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+          return;
+        }
+
+        this.setLoading(true);
+        this.hideError();
+
+        try {
+          const response = await fetch('/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              username: username,
+              password: password
+            })
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            // เก็บข้อมูลผู้ใช้
+            localStorage.setItem('jarvis_user', JSON.stringify({
+              user_id: data.user_id,
+              username: username,
+              login_time: new Date().toISOString()
+            }));
+
+            // แสดงข้อความสำเร็จ
+            this.showSuccess('เข้าสู่ระบบสำเร็จ! กำลังนำคุณไปยังหน้าแชท...');
+
+            // Redirect ไปหน้าแชท
+            setTimeout(() => {
+              window.location.href = '/JARVIS_AI_Chat.html';
+            }, 1500);
+
+          } else {
+            this.showError(data.message || 'เข้าสู่ระบบไม่สำเร็จ');
+          }
+
+        } catch (error) {
+          console.error('Login error:', error);
+          this.showError('เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง');
+        } finally {
+          this.setLoading(false);
+        }
+      }
+
+      togglePasswordVisibility() {
+        const passwordInput = document.getElementById('password');
+        const toggleBtn = document.getElementById('togglePassword');
+        const icon = toggleBtn.querySelector('i');
+
+        if (passwordInput.type === 'password') {
+          passwordInput.type = 'text';
+          icon.className = 'fas fa-eye-slash';
+        } else {
+          passwordInput.type = 'password';
+          icon.className = 'fas fa-eye';
+        }
+      }
+
+      setLoading(loading) {
+        const loginBtn = document.getElementById('loginBtn');
+        const loginBtnText = document.getElementById('loginBtnText');
+        const loginBtnLoading = document.getElementById('loginBtnLoading');
+
+        if (loading) {
+          loginBtn.disabled = true;
+          loginBtn.classList.add('opacity-75', 'cursor-not-allowed');
+          loginBtnText.classList.add('hidden');
+          loginBtnLoading.classList.remove('hidden');
+        } else {
+          loginBtn.disabled = false;
+          loginBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+          loginBtnText.classList.remove('hidden');
+          loginBtnLoading.classList.add('hidden');
+        }
+      }
+
+      showError(message) {
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        
+        errorText.textContent = message;
+        errorMessage.classList.remove('hidden');
+        
+        // Auto hide after 5 seconds
+        setTimeout(() => {
+          this.hideError();
+        }, 5000);
+      }
+
+      hideError() {
+        document.getElementById('errorMessage').classList.add('hidden');
+      }
+
+      showSuccess(message) {
+        // สร้าง success message
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        
+        errorMessage.className = errorMessage.className.replace('bg-red-500/10 border-red-500/20 text-red-400', 'bg-green-500/10 border-green-500/20 text-green-400');
+        errorText.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
+        errorMessage.classList.remove('hidden');
+      }
+
+      showRegisterInfo() {
+        alert('💡 สำหรับการทดสอบ:\n\nใช้บัญชี admin / admin123\n\nในการใช้งานจริง สามารถเพิ่มระบบสมัครสมาชิกได้ในอนาคต');
+      }
+    }
+
+    // เริ่มต้น app
+    new LoginApp();
+  </script>
+</body>
+</html>
